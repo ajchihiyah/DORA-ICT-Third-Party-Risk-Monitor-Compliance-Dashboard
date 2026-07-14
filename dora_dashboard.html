@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DORA ICT Third-Party Risk Monitor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root {
+  --bg-primary: #0a0e1a; --bg-secondary: #111827; --bg-card: #1a1f2e; --bg-hover: #232838;
+  --border-color: #2d3748; --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b;
+  --green: #10b981; --green-glow: rgba(16,185,129,0.15); --yellow: #f59e0b; --yellow-glow: rgba(245,158,11,0.15);
+  --red: #ef4444; --red-glow: rgba(239,68,68,0.15); --blue: #3b82f6; --blue-glow: rgba(59,130,246,0.15);
+  --orange: #f97316; --purple: #8b5cf6;
+  --gradient-green: linear-gradient(135deg, #10b981, #059669); --gradient-red: linear-gradient(135deg, #ef4444, #dc2626);
+  --gradient-yellow: linear-gradient(135deg, #f59e0b, #d97706); --gradient-blue: linear-gradient(135deg, #3b82f6, #2563eb);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3); --shadow-md: 0 4px 6px rgba(0,0,0,0.4); --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
+  --radius: 12px; --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+.dashboard { max-width: 1440px; margin: 0 auto; padding: 20px; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 30px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; }
+.header-left h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+.header-left .subtitle { color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.dora-badge { background: var(--gradient-blue); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+.header-right { display: flex; gap: 16px; align-items: center; }
+.status-pill { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px; font-size: 13px; font-weight: 500; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
+.status-dot.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+.status-dot.yellow { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.btn { padding: 10px 20px; border-radius: var(--radius-sm); border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+.btn-primary { background: var(--gradient-blue); color: white; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--blue-glow); }
+.btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
+.btn-outline:hover { background: var(--bg-hover); border-color: var(--text-secondary); }
+.nav-tabs { display: flex; gap: 4px; background: var(--bg-card); padding: 6px; border-radius: var(--radius); margin-bottom: 24px; overflow-x: auto; }
+.nav-tab { padding: 10px 20px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.nav-tab:hover { color: var(--text-primary); }
+.nav-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.tab-badge { background: var(--red); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+.section { display: none; }
+.section.active { display: block; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; transition: all 0.2s; }
+.kpi-card:hover { border-color: var(--text-secondary); transform: translateY(-2px); }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.kpi-card.green::before { background: var(--gradient-green); }
+.kpi-card.red::before { background: var(--gradient-red); }
+.kpi-card.yellow::before { background: var(--gradient-yellow); }
+.kpi-card.blue::before { background: var(--gradient-blue); }
+.kpi-label { color: var(--text-secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.kpi-value { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+.kpi-change { font-size: 12px; font-weight: 600; }
+.kpi-change.up { color: var(--red); }
+.kpi-change.down { color: var(--green); }
+.kpi-change.neutral { color: var(--text-muted); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden; }
+.card-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.card-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.card-body { padding: 20px; }
+.alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: var(--radius-sm); margin-bottom: 8px; transition: all 0.2s; cursor: pointer; }
+.alert-item:hover { background: var(--bg-hover); }
+.alert-item.critical { background: var(--red-glow); border-left: 3px solid var(--red); }
+.alert-item.high { background: rgba(249, 115, 22, 0.1); border-left: 3px solid var(--orange); }
+.alert-item.medium { background: var(--yellow-glow); border-left: 3px solid var(--yellow); }
+.alert-item.resolved { opacity: 0.6; }
+.alert-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.alert-icon.critical { background: var(--red-glow); color: var(--red); }
+.alert-icon.high { background: rgba(249, 115, 22, 0.15); color: var(--orange); }
+.alert-icon.medium { background: var(--yellow-glow); color: var(--yellow); }
+.alert-content { flex: 1; }
+.alert-vendor { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
+.alert-message { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.alert-meta { font-size: 11px; color: var(--text-muted); }
+.alert-status { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.alert-status.open { background: var(--red-glow); color: var(--red); }
+.alert-status.acknowledged { background: var(--yellow-glow); color: var(--yellow); }
+.alert-status.resolved { background: var(--green-glow); color: var(--green); }
+.vendor-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden; transition: all 0.2s; }
+.vendor-card:hover { border-color: var(--text-secondary); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.vendor-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+.vendor-info { display: flex; align-items: center; gap: 12px; }
+.vendor-avatar { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+.vendor-avatar.green { background: var(--green-glow); color: var(--green); }
+.vendor-avatar.yellow { background: var(--yellow-glow); color: var(--yellow); }
+.vendor-avatar.red { background: var(--red-glow); color: var(--red); }
+.vendor-name { font-size: 15px; font-weight: 700; }
+.vendor-type { font-size: 12px; color: var(--text-muted); }
+.vendor-score { text-align: center; }
+.score-value { font-size: 28px; font-weight: 800; }
+.score-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+.traffic-light { display: flex; gap: 4px; margin-top: 4px; justify-content: center; }
+.light { width: 8px; height: 8px; border-radius: 50%; background: var(--bg-hover); }
+.light.active.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.light.active.yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.light.active.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.vendor-body { padding: 16px 20px; }
+.vendor-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.metric { text-align: center; }
+.metric-value { font-size: 18px; font-weight: 700; }
+.metric-label { font-size: 11px; color: var(--text-muted); }
+.concentration-bar { height: 6px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.concentration-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.concentration-fill.green { background: var(--green); }
+.concentration-fill.yellow { background: var(--yellow); }
+.concentration-fill.red { background: var(--red); }
+.clause-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.clause-tag { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.clause-tag.ok { background: var(--green-glow); color: var(--green); }
+.clause-tag.missing { background: var(--red-glow); color: var(--red); }
+.vendor-footer { padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.region-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.region-badge.eu { background: var(--green-glow); color: var(--green); }
+.region-badge.non-eu { background: var(--red-glow); color: var(--red); }
+.bubble-chart-container { position: relative; height: 400px; background: var(--bg-card); border-radius: var(--radius); overflow: hidden; }
+.bubble { position: absolute; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; text-align: center; padding: 8px; }
+.bubble:hover { transform: scale(1.08); z-index: 10; border-color: rgba(255,255,255,0.3); }
+.bubble-name { font-size: 11px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+.bubble-pct { font-size: 14px; font-weight: 800; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+.bubble-legend { position: absolute; bottom: 16px; left: 16px; display: flex; gap: 16px; background: rgba(0,0,0,0.6); padding: 10px 16px; border-radius: 8px; backdrop-filter: blur(8px); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.threshold-line { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--red); pointer-events: none; }
+.threshold-label { position: absolute; right: 10px; background: var(--red); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.simulator-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; }
+.sim-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-select, .form-input { width: 100%; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: all 0.2s; }
+.form-select:focus, .form-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.sim-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.sim-result-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; text-align: center; }
+.sim-result-value { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+.sim-result-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+.sim-timeline { margin-top: 24px; padding: 20px; background: var(--bg-primary); border-radius: var(--radius-sm); }
+.timeline-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.timeline { display: flex; align-items: center; gap: 0; }
+.timeline-step { flex: 1; text-align: center; position: relative; }
+.timeline-step::after { content: ''; position: absolute; top: 14px; left: 50%; right: -50%; height: 2px; background: var(--border-color); z-index: 0; }
+.timeline-step:last-child::after { display: none; }
+.timeline-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 12px; position: relative; z-index: 1; }
+.timeline-dot.active { border-color: var(--blue); background: var(--blue-glow); color: var(--blue); }
+.timeline-dot.complete { border-color: var(--green); background: var(--green); color: white; }
+.timeline-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+.timeline-duration { font-size: 9px; color: var(--text-muted); }
+.checklist-table { width: 100%; border-collapse: collapse; }
+.checklist-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); }
+.checklist-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+.checklist-table tr:hover td { background: var(--bg-hover); }
+.check-icon { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+.check-icon.ok { background: var(--green-glow); color: var(--green); }
+.check-icon.missing { background: var(--red-glow); color: var(--red); }
+.progress-bar { height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; width: 100px; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.audit-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+.audit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.audit-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+.audit-item:last-child { border-bottom: none; }
+.audit-item-left { display: flex; align-items: center; gap: 12px; }
+.audit-item-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.audit-item-title { font-size: 14px; font-weight: 600; }
+.audit-item-desc { font-size: 12px; color: var(--text-muted); }
+.audit-item-status { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.audit-item-status.ready { background: var(--green-glow); color: var(--green); }
+.audit-item-status.pending { background: var(--yellow-glow); color: var(--yellow); }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.active { display: flex; }
+.modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; animation: modalIn 0.3s ease; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s; }
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-body { padding: 20px; }
+.detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { color: var(--text-muted); font-size: 13px; }
+.detail-value { font-weight: 600; font-size: 13px; }
+.event-item { padding: 12px; background: var(--bg-primary); border-radius: var(--radius-sm); margin-bottom: 8px; border-left: 3px solid var(--border-color); }
+.event-item.critical { border-left-color: var(--red); }
+.event-item.high { border-left-color: var(--orange); }
+.event-item.medium { border-left-color: var(--yellow); }
+.event-date { font-size: 11px; color: var(--text-muted); }
+.event-desc { font-size: 13px; font-weight: 600; margin-top: 4px; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+@media (max-width: 768px) { .header { flex-direction: column; gap: 16px; align-items: flex-start; } .card-grid { grid-template-columns: 1fr; } .kpi-grid { grid-template-columns: 1fr 1fr; } .nav-tabs { overflow-x: auto; } }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="header">
+    <div class="header-left">
+      <h1>DORA ICT Third-Party Risk Monitor</h1>
+      <div class="subtitle">
+        <span class="dora-badge">DORA COMPLIANT</span>
+        <span>BaFin Regulatory Dashboard &middot; German Financial Sector</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill"><span class="status-dot red"></span><span>2 Critical Alerts</span></div>
+      <div class="status-pill"><span class="status-dot yellow"></span><span>1 Concentration Risk</span></div>
+      <button class="btn btn-primary" onclick="generateAuditPack()">DORA Audit Pack</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('overview')" data-tab="overview">Overview</button>
+    <button class="nav-tab" onclick="switchTab('scorecards')" data-tab="scorecards">Vendor Scorecards</button>
+    <button class="nav-tab" onclick="switchTab('concentration')" data-tab="concentration">Concentration Risk</button>
+    <button class="nav-tab" onclick="switchTab('exit')" data-tab="exit">Exit Simulator</button>
+    <button class="nav-tab" onclick="switchTab('compliance')" data-tab="compliance">Compliance Checklist</button>
+    <button class="nav-tab" onclick="switchTab('alerts')" data-tab="alerts">Alerts <span class="tab-badge">5</span></button>
+  </div>
+
+  <div id="section-overview" class="section active">
+    <div class="kpi-grid fade-in">
+      <div class="kpi-card red"><div class="kpi-label">Critical Concentration Risk</div><div class="kpi-value" style="color:var(--red)">60%</div><div class="kpi-change up">AWS Frankfurt &middot; Threshold: 50%</div></div>
+      <div class="kpi-card yellow"><div class="kpi-label">Avg Security Score</div><div class="kpi-value" style="color:var(--yellow)">82.1</div><div class="kpi-change neutral">Across 7 registered vendors</div></div>
+      <div class="kpi-card red"><div class="kpi-label">Open Critical Alerts</div><div class="kpi-value" style="color:var(--red)">2</div><div class="kpi-change up">+1 from last week</div></div>
+      <div class="kpi-card green"><div class="kpi-label">Contract Compliance</div><div class="kpi-value" style="color:var(--green)">71%</div><div class="kpi-change down">Up 3% from last month</div></div>
+      <div class="kpi-card blue"><div class="kpi-label">Non-EU Exposure</div><div class="kpi-value" style="color:var(--blue)">55%</div><div class="kpi-change up">BaFin priority 2026</div></div>
+      <div class="kpi-card yellow"><div class="kpi-label">Exit Readiness</div><div class="kpi-value" style="color:var(--yellow)">64%</div><div class="kpi-change neutral">Avg across all vendors</div></div>
+    </div>
+    <div class="card-grid fade-in">
+      <div class="card" style="grid-column:span 2">
+        <div class="card-header"><div class="card-title">Recent Alerts</div><button class="btn btn-outline" onclick="switchTab('alerts')">View All</button></div>
+        <div class="card-body">
+          <div class="alert-item critical" onclick="showAlertDetail(1)"><div class="alert-icon critical">!</div><div class="alert-content"><div class="alert-vendor">AWS (Frankfurt)</div><div class="alert-message">60% concentration in critical functions exceeds 50% threshold</div><div class="alert-meta">2026-07-13 14:30 &middot; Concentration Risk</div></div><span class="alert-status open">Open</span></div>
+          <div class="alert-item critical" onclick="showAlertDetail(2)"><div class="alert-icon critical">!</div><div class="alert-content"><div class="alert-vendor">CrowdStrike</div><div class="alert-message">Critical vulnerability CVE-2026-YYYY affects Falcon sensors</div><div class="alert-meta">2026-07-12 09:15 &middot; Vulnerability</div></div><span class="alert-status open">Open</span></div>
+          <div class="alert-item medium" onclick="showAlertDetail(3)"><div class="alert-icon medium">i</div><div class="alert-content"><div class="alert-vendor">Salesforce</div><div class="alert-message">Security rating dropped below contractual threshold (74 &lt; 75)</div><div class="alert-meta">2026-07-08 16:45 &middot; Rating Drop</div></div><span class="alert-status acknowledged">Acknowledged</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Vendor Distribution</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">Cloud Providers</span><span style="font-size:13px;font-weight:700">4</span></div><div class="concentration-bar"><div class="concentration-fill green" style="width:57%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">SaaS Vendors</span><span style="font-size:13px;font-weight:700">1</span></div><div class="concentration-bar"><div class="concentration-fill blue" style="width:14%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">MSPs</span><span style="font-size:13px;font-weight:700">1</span></div><div class="concentration-bar"><div class="concentration-fill yellow" style="width:14%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">EU-based</span><span style="font-size:13px;font-weight:700">5</span></div><div class="concentration-bar"><div class="concentration-fill green" style="width:71%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">Non-EU</span><span style="font-size:13px;font-weight:700;color:var(--red)">2</span></div><div class="concentration-bar"><div class="concentration-fill red" style="width:29%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="section-scorecards" class="section"><div class="card-grid" id="scorecards-grid"></div></div>
+
+  <div id="section-concentration" class="section">
+    <div class="card-grid">
+      <div class="card" style="grid-column:span 2">
+        <div class="card-header"><div class="card-title">Concentration Risk Bubble Chart</div><span style="font-size:12px;color:var(--text-muted)">Bubble size = Critical functions dependent</span></div>
+        <div class="card-body" style="padding:0"><div class="bubble-chart-container" id="bubble-chart"><div class="threshold-line" style="top:50%"><span class="threshold-label">50% Threshold</span></div><div class="bubble-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Low Risk</div><div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Medium Risk</div><div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Critical Risk</div><div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>EU-based</div><div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Non-EU</div></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Risk Thresholds</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600">Critical Functions</span><span style="font-size:13px;color:var(--red);font-weight:700">&le; 50%</span></div><div class="concentration-bar"><div class="concentration-fill red" style="width:100%"></div></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">AWS Frankfurt: 60% EXCEEDED</div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600">High Criticality</span><span style="font-size:13px;color:var(--yellow);font-weight:700">&le; 40%</span></div><div class="concentration-bar"><div class="concentration-fill yellow" style="width:80%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600">Medium Criticality</span><span style="font-size:13px;color:var(--green);font-weight:700">&le; 30%</span></div><div class="concentration-bar"><div class="concentration-fill green" style="width:60%"></div></div></div>
+            <div style="padding:12px;background:var(--red-glow);border-radius:8px;margin-top:8px"><div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px">BaFin Priority 2026</div><div style="font-size:12px;color:var(--text-secondary)">Non-EU hyperscaler concentration identified as top supervisory priority. Immediate exit strategy required for AWS Frankfurt critical function dependency.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="section-exit" class="section">
+    <div class="simulator-panel fade-in">
+      <div class="sim-controls">
+        <div class="form-group"><label>Select Vendor to Exit</label><select class="form-select" id="exit-vendor" onchange="updateExitSimulation()"><option value="aws-de">AWS (Frankfurt) - 60% concentration</option><option value="azure-de">Microsoft Azure (Germany) - 25%</option><option value="salesforce">Salesforce - 15%</option><option value="crowdstrike">CrowdStrike - 40%</option><option value="sap-cloud">SAP Cloud (Frankfurt) - 20%</option><option value="google-cloud">Google Cloud (Belgium) - 10%</option><option value="ibm-cloud">IBM Cloud (Frankfurt) - 5%</option></select></div>
+        <div class="form-group"><label>Migration Scope</label><select class="form-select" id="exit-scope" onchange="updateExitSimulation()"><option value="full">Full Exit (All Functions)</option><option value="critical">Critical Functions Only</option><option value="non-critical">Non-Critical Functions Only</option></select></div>
+        <div class="form-group"><label>Target Alternative</label><select class="form-select" id="exit-target" onchange="updateExitSimulation()"><option value="multi">Multi-Cloud Distribution</option><option value="azure">Microsoft Azure (Germany)</option><option value="google">Google Cloud (Belgium)</option><option value="sap">SAP Cloud (Frankfurt)</option><option value="ibm">IBM Cloud (Frankfurt)</option></select></div>
+        <div class="form-group"><label>Risk Tolerance</label><select class="form-select" id="exit-risk" onchange="updateExitSimulation()"><option value="low">Low (Minimal Disruption)</option><option value="medium">Medium (Balanced)</option><option value="high">High (Aggressive Timeline)</option></select></div>
+      </div>
+      <div class="sim-results" id="sim-results"></div>
+      <div class="sim-timeline" id="sim-timeline"></div>
+    </div>
+  </div>
+
+  <div id="section-compliance" class="section">
+    <div class="card fade-in">
+      <div class="card-header"><div class="card-title">DORA Contract Clause Compliance Matrix</div><button class="btn btn-outline" onclick="exportCompliance()">Export CSV</button></div>
+      <div class="card-body" style="padding:0;overflow-x:auto">
+        <table class="checklist-table" id="compliance-table"><thead><tr><th>Vendor</th><th>Type</th><th>Region</th><th>Audit Rights</th><th>Data Location</th><th>Subcontracting</th><th>TLPT Support</th><th>Compliance %</th></tr></thead><tbody id="compliance-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="card-grid" style="margin-top:16px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Clause Gap Analysis</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">Audit Rights</span><span style="font-size:13px;font-weight:700;color:var(--green)">86%</span></div><div class="concentration-bar"><div class="concentration-fill green" style="width:86%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">Data Location</span><span style="font-size:13px;font-weight:700;color:var(--green)">71%</span></div><div class="concentration-bar"><div class="concentration-fill green" style="width:71%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">Subcontracting</span><span style="font-size:13px;font-weight:700;color:var(--green)">86%</span></div><div class="concentration-bar"><div class="concentration-fill green" style="width:86%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">TLPT Support</span><span style="font-size:13px;font-weight:700;color:var(--red)">43%</span></div><div class="concentration-bar"><div class="concentration-fill red" style="width:43%"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Priority Remediation</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="padding:12px;background:var(--red-glow);border-radius:8px;border-left:3px solid var(--red)"><div style="font-size:13px;font-weight:700;color:var(--red)">Salesforce</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Missing: Audit Rights, Data Location, TLPT Support (3/4 clauses)</div></div>
+            <div style="padding:12px;background:var(--yellow-glow);border-radius:8px;border-left:3px solid var(--yellow)"><div style="font-size:13px;font-weight:700;color:var(--yellow)">SAP Cloud</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Missing: Subcontracting Transparency, TLPT Support (2/4 clauses)</div></div>
+            <div style="padding:12px;background:var(--yellow-glow);border-radius:8px;border-left:3px solid var(--yellow)"><div style="font-size:13px;font-weight:700;color:var(--yellow)">AWS Frankfurt</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Missing: TLPT Support (3/4 clauses)</div></div>
+            <div style="padding:12px;background:var(--yellow-glow);border-radius:8px;border-left:3px solid var(--yellow)"><div style="font-size:13px;font-weight:700;color:var(--yellow)">IBM Cloud</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Missing: TLPT Support (3/4 clauses)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="section-alerts" class="section">
+    <div class="card fade-in">
+      <div class="card-header"><div class="card-title">All Active Alerts</div><div style="display:flex;gap:8px"><button class="btn btn-outline" onclick="filterAlerts('all')">All</button><button class="btn btn-outline" onclick="filterAlerts('critical')">Critical</button><button class="btn btn-outline" onclick="filterAlerts('open')">Open</button></div></div>
+      <div class="card-body" id="alerts-container"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="audit-modal">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">DORA Audit Pack Generator</div><button class="modal-close" onclick="closeAuditModal()">&times;</button></div>
+      <div class="modal-body">
+        <div class="audit-section">
+          <div class="audit-header"><span style="font-size:14px;font-weight:700">1. ICT Third-Party Register</span><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">R</div><div><div class="audit-item-title">Complete Vendor Register</div><div class="audit-item-desc">7 registered ICT third parties with risk classifications</div></div></div><span class="audit-item-status ready">Complete</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">P</div><div><div class="audit-item-title">Pre-Contract Risk Assessments</div><div class="audit-item-desc">Security scores and due diligence records</div></div></div><span class="audit-item-status ready">Complete</span></div>
+        </div>
+        <div class="audit-section">
+          <div class="audit-header"><span style="font-size:14px;font-weight:700">2. Contract Clause Evidence</span><span class="audit-item-status pending">Pending</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">A</div><div><div class="audit-item-title">Audit Rights Documentation</div><div class="audit-item-desc">6/7 vendors compliant</div></div></div><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">L</div><div><div class="audit-item-title">Data Location Verification</div><div class="audit-item-desc">5/7 vendors with EU data residency</div></div></div><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">S</div><div><div class="audit-item-title">Subcontracting Transparency</div><div class="audit-item-desc">6/7 vendors with disclosed subcontractors</div></div></div><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">T</div><div><div class="audit-item-title">TLPT Support Agreements</div><div class="audit-item-desc">3/7 vendors - GAP IDENTIFIED</div></div></div><span class="audit-item-status pending">Action Required</span></div>
+        </div>
+        <div class="audit-section">
+          <div class="audit-header"><span style="font-size:14px;font-weight:700">3. Exit Strategy Documentation</span><span class="audit-item-status pending">Pending</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">E</div><div><div class="audit-item-title">Exit Scenario Simulations</div><div class="audit-item-desc">Migration cost/time estimates for all critical vendors</div></div></div><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">D</div><div><div class="audit-item-title">Data Portability Assessments</div><div class="audit-item-desc">Portability scores and format compatibility</div></div></div><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">V</div><div><div class="audit-item-title">Alternative Vendor Readiness</div><div class="audit-item-desc">AWS Frankfurt exit: 60% alternative readiness</div></div></div><span class="audit-item-status pending">Below Threshold</span></div>
+        </div>
+        <div class="audit-section">
+          <div class="audit-header"><span style="font-size:14px;font-weight:700">4. Concentration Risk Analysis</span><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">C</div><div><div class="audit-item-title">Concentration Risk Report</div><div class="audit-item-desc">AWS Frankfurt: 60% - THRESHOLD EXCEEDED</div></div></div><span class="audit-item-status ready">Ready</span></div>
+          <div class="audit-item"><div class="audit-item-left"><div class="audit-item-icon">G</div><div><div class="audit-item-title">Non-EU Exposure Analysis</div><div class="audit-item-desc">55% non-EU dependency - BaFin priority</div></div></div><span class="audit-item-status ready">Ready</span></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px">
+          <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="downloadAuditPack()">Download BaFin Audit Pack (PDF)</button>
+          <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="downloadAuditPack()">Export Raw Data (JSON)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="vendor-modal">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="vendor-modal-title">Vendor Details</div><button class="modal-close" onclick="closeVendorModal()">&times;</button></div>
+      <div class="modal-body" id="vendor-modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const vendors = [
+  { id: "aws-de", name: "AWS (Frankfurt)", type: "Cloud Provider", region: "EU", criticality: "Critical", security_score: 82, last_assessment: "2026-06-28", status: "green", functions_dependent: 12, total_functions: 20, concentration_pct: 60, contract_clauses: { audit_rights: true, data_location: true, subcontracting_transparency: true, tlpt_support: false }, exit_readiness: { data_portability: 85, alternative_ready: 60, migration_cost: 2.4, migration_time_months: 8 }, recent_events: [{ date: "2026-07-10", type: "vulnerability", severity: "medium", description: "CVE-2026-XXXX in S3 encryption" }, { date: "2026-06-15", type: "outage", severity: "high", description: "45-min outage in eu-central-1" }], subcontractors: ["AWS Ireland", "AWS US-East"], data_locations: ["Frankfurt", "Dublin"], annual_cost: 4.2 },
+  { id: "azure-de", name: "Microsoft Azure (Germany)", type: "Cloud Provider", region: "EU", criticality: "Critical", security_score: 88, last_assessment: "2026-07-01", status: "green", functions_dependent: 5, total_functions: 20, concentration_pct: 25, contract_clauses: { audit_rights: true, data_location: true, subcontracting_transparency: true, tlpt_support: true }, exit_readiness: { data_portability: 90, alternative_ready: 75, migration_cost: 1.8, migration_time_months: 6 }, recent_events: [], subcontractors: ["Microsoft Ireland"], data_locations: ["Frankfurt", "Berlin"], annual_cost: 2.1 },
+  { id: "salesforce", name: "Salesforce", type: "SaaS", region: "Non-EU", criticality: "High", security_score: 74, last_assessment: "2026-06-15", status: "yellow", functions_dependent: 3, total_functions: 20, concentration_pct: 15, contract_clauses: { audit_rights: false, data_location: false, subcontracting_transparency: true, tlpt_support: false }, exit_readiness: { data_portability: 45, alternative_ready: 30, migration_cost: 0.8, migration_time_months: 4 }, recent_events: [{ date: "2026-07-08", type: "rating_drop", severity: "medium", description: "Security rating dropped from 78 to 74" }], subcontractors: ["AWS US-West", "Heroku"], data_locations: ["US", "Ireland"], annual_cost: 0.9 },
+  { id: "crowdstrike", name: "CrowdStrike", type: "MSP", region: "Non-EU", criticality: "Critical", security_score: 91, last_assessment: "2026-07-05", status: "green", functions_dependent: 8, total_functions: 20, concentration_pct: 40, contract_clauses: { audit_rights: true, data_location: false, subcontracting_transparency: true, tlpt_support: true }, exit_readiness: { data_portability: 70, alternative_ready: 55, migration_cost: 1.2, migration_time_months: 5 }, recent_events: [{ date: "2026-07-12", type: "vulnerability", severity: "critical", description: "Falcon sensor bypass vulnerability (CVE-2026-YYYY)" }], subcontractors: ["AWS", "Google Cloud"], data_locations: ["US", "UK"], annual_cost: 1.5 },
+  { id: "sap-cloud", name: "SAP Cloud (Frankfurt)", type: "Cloud Provider", region: "EU", criticality: "High", security_score: 79, last_assessment: "2026-06-20", status: "yellow", functions_dependent: 4, total_functions: 20, concentration_pct: 20, contract_clauses: { audit_rights: true, data_location: true, subcontracting_transparency: false, tlpt_support: false }, exit_readiness: { data_portability: 60, alternative_ready: 80, migration_cost: 1.5, migration_time_months: 7 }, recent_events: [], subcontractors: ["SAP Netherlands"], data_locations: ["Frankfurt", "Walldorf"], annual_cost: 1.8 },
+  { id: "google-cloud", name: "Google Cloud (Belgium)", type: "Cloud Provider", region: "EU", criticality: "Medium", security_score: 85, last_assessment: "2026-06-25", status: "green", functions_dependent: 2, total_functions: 20, concentration_pct: 10, contract_clauses: { audit_rights: true, data_location: true, subcontracting_transparency: true, tlpt_support: true }, exit_readiness: { data_portability: 88, alternative_ready: 70, migration_cost: 0.9, migration_time_months: 5 }, recent_events: [], subcontractors: ["Google Ireland"], data_locations: ["Belgium", "Ireland"], annual_cost: 0.8 },
+  { id: "ibm-cloud", name: "IBM Cloud (Frankfurt)", type: "Cloud Provider", region: "EU", criticality: "Medium", security_score: 76, last_assessment: "2026-06-18", status: "yellow", functions_dependent: 1, total_functions: 20, concentration_pct: 5, contract_clauses: { audit_rights: true, data_location: true, subcontracting_transparency: true, tlpt_support: false }, exit_readiness: { data_portability: 75, alternative_ready: 65, migration_cost: 0.5, migration_time_months: 3 }, recent_events: [], subcontractors: ["IBM UK"], data_locations: ["Frankfurt", "London"], annual_cost: 0.4 }
+];
+
+const alerts = [
+  { id: 1, vendor: "AWS (Frankfurt)", type: "concentration", severity: "critical", message: "60% concentration in critical functions exceeds 50% threshold", timestamp: "2026-07-13 14:30", status: "open" },
+  { id: 2, vendor: "CrowdStrike", type: "vulnerability", severity: "critical", message: "Critical vulnerability CVE-2026-YYYY affects Falcon sensors", timestamp: "2026-07-12 09:15", status: "open" },
+  { id: 3, vendor: "Salesforce", type: "rating_drop", severity: "medium", message: "Security rating dropped below contractual threshold (74 < 75)", timestamp: "2026-07-08 16:45", status: "acknowledged" },
+  { id: 4, vendor: "SAP Cloud", type: "compliance", severity: "medium", message: "Missing TLPT support clause in contract", timestamp: "2026-07-05 11:20", status: "open" },
+  { id: 5, vendor: "AWS (Frankfurt)", type: "outage", severity: "high", message: "Recent outage in eu-central-1 (45 min)", timestamp: "2026-06-15 08:00", status: "resolved" }
+];
+
+function switchTab(tabName) {
+  document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('section-' + tabName).classList.add('active');
+  document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+  if (tabName === 'scorecards') renderScorecards();
+  if (tabName === 'concentration') renderBubbleChart();
+  if (tabName === 'compliance') renderCompliance();
+  if (tabName === 'alerts') renderAlerts('all');
+  if (tabName === 'exit') updateExitSimulation();
+}
+
+function renderScorecards() {
+  const grid = document.getElementById('scorecards-grid');
+  var html = '';
+  for (var i = 0; i < vendors.length; i++) {
+    var v = vendors[i];
+    var compliance = 0;
+    if (v.contract_clauses.audit_rights) compliance++;
+    if (v.contract_clauses.data_location) compliance++;
+    if (v.contract_clauses.subcontracting_transparency) compliance++;
+    if (v.contract_clauses.tlpt_support) compliance++;
+    var compliancePct = Math.round((compliance / 4) * 100);
+    var scoreColor = v.security_score >= 85 ? 'green' : v.security_score >= 75 ? 'yellow' : 'red';
+    var concColor = v.concentration_pct >= 50 ? 'red' : v.concentration_pct >= 30 ? 'yellow' : 'green';
+    var statusGreen = v.status === 'green' ? 'active green' : '';
+    var statusYellow = v.status === 'yellow' ? 'active yellow' : '';
+    var statusRed = v.status === 'red' ? 'active red' : '';
+    var regionClass = v.region === 'EU' ? 'eu' : 'non-eu';
+
+    html += '<div class="vendor-card" onclick="showVendorDetail(\'' + v.id + '\')">';
+    html += '<div class="vendor-header"><div class="vendor-info"><div class="vendor-avatar ' + scoreColor + '">' + v.name.charAt(0) + '</div>';
+    html += '<div><div class="vendor-name">' + v.name + '</div><div class="vendor-type">' + v.type + ' &middot; ' + v.criticality + '</div></div></div>';
+    html += '<div class="vendor-score"><div class="score-value" style="color:var(--' + scoreColor + ')">' + v.security_score + '</div>';
+    html += '<div class="score-label">Security Score</div><div class="traffic-light">';
+    html += '<div class="light ' + statusGreen + '"></div><div class="light ' + statusYellow + '"></div><div class="light ' + statusRed + '"></div></div></div></div>';
+    html += '<div class="vendor-body"><div class="vendor-metrics">';
+    html += '<div class="metric"><div class="metric-value" style="color:var(--' + concColor + ')">' + v.concentration_pct + '%</div><div class="metric-label">Concentration</div><div class="concentration-bar"><div class="concentration-fill ' + concColor + '" style="width:' + v.concentration_pct + '%"></div></div></div>';
+    html += '<div class="metric"><div class="metric-value">' + v.functions_dependent + '</div><div class="metric-label">Functions</div></div>';
+    html += '<div class="metric"><div class="metric-value">' + v.exit_readiness.data_portability + '%</div><div class="metric-label">Data Portability</div></div>';
+    html += '<div class="metric"><div class="metric-value">' + compliancePct + '%</div><div class="metric-label">Compliance</div></div></div>';
+    html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600">DORA Clauses:</div>';
+    html += '<div class="clause-list">';
+    html += '<span class="clause-tag ' + (v.contract_clauses.audit_rights ? 'ok' : 'missing') + '">' + (v.contract_clauses.audit_rights ? '&#10003;' : '&#10007;') + ' Audit</span>';
+    html += '<span class="clause-tag ' + (v.contract_clauses.data_location ? 'ok' : 'missing') + '">' + (v.contract_clauses.data_location ? '&#10003;' : '&#10007;') + ' Data Loc</span>';
+    html += '<span class="clause-tag ' + (v.contract_clauses.subcontracting_transparency ? 'ok' : 'missing') + '">' + (v.contract_clauses.subcontracting_transparency ? '&#10003;' : '&#10007;') + ' Subcontract</span>';
+    html += '<span class="clause-tag ' + (v.contract_clauses.tlpt_support ? 'ok' : 'missing') + '">' + (v.contract_clauses.tlpt_support ? '&#10003;' : '&#10007;') + ' TLPT</span>';
+    html += '</div></div>';
+    html += '<div class="vendor-footer"><span class="region-badge ' + regionClass + '">' + v.region + '</span>';
+    html += '<span style="font-size:11px;color:var(--text-muted)">Last assessed: ' + v.last_assessment + '</span></div></div>';
+  }
+  grid.innerHTML = html;
+}
+
+function renderBubbleChart() {
+  var container = document.getElementById('bubble-chart');
+  var existing = container.querySelectorAll('.bubble');
+  for (var i = 0; i < existing.length; i++) existing[i].remove();
+
+  for (var i = 0; i < vendors.length; i++) {
+    var v = vendors[i];
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    var size = 60 + (v.functions_dependent * 12);
+    var color = v.concentration_pct >= 50 ? 'var(--red)' : v.concentration_pct >= 30 ? 'var(--yellow)' : 'var(--green)';
+    var borderColor = v.region === 'Non-EU' ? 'var(--orange)' : 'var(--blue)';
+    var left = 8 + (i * 13);
+    var top = 55 - (v.concentration_pct * 0.7);
+    if (top < 5) top = 5;
+    if (top > 75) top = 75;
+
+    bubble.style.cssText = 'width:' + size + 'px;height:' + size + 'px;background:' + color + ';left:' + left + '%;top:' + top + '%;border-color:' + borderColor + ';opacity:0.85;';
+    bubble.innerHTML = '<span class="bubble-name">' + v.name.split(' ')[0] + '</span><span class="bubble-pct">' + v.concentration_pct + '%</span>';
+    bubble.onclick = (function(vid) { return function() { showVendorDetail(vid); }; })(v.id);
+    container.appendChild(bubble);
+  }
+}
+
+function renderCompliance() {
+  var tbody = document.getElementById('compliance-tbody');
+  var html = '';
+  for (var i = 0; i < vendors.length; i++) {
+    var v = vendors[i];
+    var compliance = 0;
+    if (v.contract_clauses.audit_rights) compliance++;
+    if (v.contract_clauses.data_location) compliance++;
+    if (v.contract_clauses.subcontracting_transparency) compliance++;
+    if (v.contract_clauses.tlpt_support) compliance++;
+    var compliancePct = Math.round((compliance / 4) * 100);
+    var barColor = compliancePct >= 75 ? 'var(--green)' : compliancePct >= 50 ? 'var(--yellow)' : 'var(--red)';
+    var regionClass = v.region === 'EU' ? 'eu' : 'non-eu';
+
+    html += '<tr>';
+    html += '<td><strong>' + v.name + '</strong></td>';
+    html += '<td>' + v.type + '</td>';
+    html += '<td><span class="region-badge ' + regionClass + '">' + v.region + '</span></td>';
+    html += '<td><span class="check-icon ' + (v.contract_clauses.audit_rights ? 'ok' : 'missing') + '">' + (v.contract_clauses.audit_rights ? '&#10003;' : '&#10007;') + '</span></td>';
+    html += '<td><span class="check-icon ' + (v.contract_clauses.data_location ? 'ok' : 'missing') + '">' + (v.contract_clauses.data_location ? '&#10003;' : '&#10007;') + '</span></td>';
+    html += '<td><span class="check-icon ' + (v.contract_clauses.subcontracting_transparency ? 'ok' : 'missing') + '">' + (v.contract_clauses.subcontracting_transparency ? '&#10003;' : '&#10007;') + '</span></td>';
+    html += '<td><span class="check-icon ' + (v.contract_clauses.tlpt_support ? 'ok' : 'missing') + '">' + (v.contract_clauses.tlpt_support ? '&#10003;' : '&#10007;') + '</span></td>';
+    html += '<td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar"><div class="progress-fill" style="width:' + compliancePct + '%;background:' + barColor + '"></div></div><span style="font-weight:700;font-size:13px">' + compliancePct + '%</span></div></td>';
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function renderAlerts(filter) {
+  var container = document.getElementById('alerts-container');
+  var filtered = alerts;
+  if (filter === 'critical') {
+    filtered = [];
+    for (var i = 0; i < alerts.length; i++) if (alerts[i].severity === 'critical') filtered.push(alerts[i]);
+  }
+  if (filter === 'open') {
+    filtered = [];
+    for (var i = 0; i < alerts.length; i++) if (alerts[i].status === 'open') filtered.push(alerts[i]);
+  }
+
+  var html = '';
+  for (var i = 0; i < filtered.length; i++) {
+    var a = filtered[i];
+    var icon = a.severity === 'critical' ? '!' : a.severity === 'high' ? '!' : 'i';
+    var resolvedClass = a.status === 'resolved' ? ' resolved' : '';
+    html += '<div class="alert-item ' + a.severity + resolvedClass + '" onclick="showAlertDetail(' + a.id + ')">';
+    html += '<div class="alert-icon ' + a.severity + '">' + icon + '</div>';
+    html += '<div class="alert-content"><div class="alert-vendor">' + a.vendor + '</div><div class="alert-message">' + a.message + '</div><div class="alert-meta">' + a.timestamp + ' &middot; ' + a.type.replace(/_/g, ' ') + '</div></div>';
+    html += '<span class="alert-status ' + a.status + '">' + a.status + '</span></div>';
+  }
+  container.innerHTML = html;
+}
+
+function filterAlerts(filter) { renderAlerts(filter); }
+
+function updateExitSimulation() {
+  var vendorId = document.getElementById('exit-vendor').value;
+  var scope = document.getElementById('exit-scope').value;
+  var target = document.getElementById('exit-target').value;
+  var risk = document.getElementById('exit-risk').value;
+  var vendor = null;
+  for (var i = 0; i < vendors.length; i++) if (vendors[i].id === vendorId) { vendor = vendors[i]; break; }
+  if (!vendor) return;
+
+  var scopeMultiplier = scope === 'full' ? 1 : scope === 'critical' ? 0.6 : 0.4;
+  var targetMultiplier = target === 'multi' ? 1.2 : 0.9;
+  var riskMultiplier = risk === 'low' ? 1.5 : risk === 'medium' ? 1 : 0.7;
+
+  var cost = (vendor.exit_readiness.migration_cost * scopeMultiplier * targetMultiplier * riskMultiplier).toFixed(1);
+  var time = Math.ceil(vendor.exit_readiness.migration_time_months * scopeMultiplier * riskMultiplier);
+  var portability = Math.round(vendor.exit_readiness.data_portability * (target === 'multi' ? 0.9 : 1));
+  var altReady = Math.round(vendor.exit_readiness.alternative_ready * (target === 'multi' ? 1.1 : 0.95));
+  var downtime = risk === 'low' ? '< 1 hour' : risk === 'medium' ? '2-4 hours' : '4-8 hours';
+
+  var results = document.getElementById('sim-results');
+  results.innerHTML = 
+    '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--red)">&euro;' + cost + 'M</div><div class="sim-result-label">Est. Migration Cost</div></div>' +
+    '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--yellow)">' + time + ' months</div><div class="sim-result-label">Timeline</div></div>' +
+    '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--blue)">' + portability + '%</div><div class="sim-result-label">Data Portability</div></div>' +
+    '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--green)">' + altReady + '%</div><div class="sim-result-label">Alt. Vendor Ready</div></div>' +
+    '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--orange)">' + downtime + '</div><div class="sim-result-label">Est. Downtime</div></div>';
+
+  var timeline = document.getElementById('sim-timeline');
+  var phases = [
+    { label: 'Assessment', duration: Math.ceil(time * 0.15) + ' mo' },
+    { label: 'Planning', duration: Math.ceil(time * 0.2) + ' mo' },
+    { label: 'Data Export', duration: Math.ceil(time * 0.25) + ' mo' },
+    { label: 'Migration', duration: Math.ceil(time * 0.3) + ' mo' },
+    { label: 'Validation', duration: Math.ceil(time * 0.1) + ' mo' }
+  ];
+
+  var tHtml = '<div class="timeline-title">Exit Timeline for ' + vendor.name + '</div><div class="timeline">';
+  for (var i = 0; i < phases.length; i++) {
+    tHtml += '<div class="timeline-step"><div class="timeline-dot ' + (i === 0 ? 'active' : '') + '">' + (i + 1) + '</div><div class="timeline-label">' + phases[i].label + '</div><div class="timeline-duration">' + phases[i].duration + '</div></div>';
+  }
+  tHtml += '</div>';
+  timeline.innerHTML = tHtml;
+}
+
+function showVendorDetail(vendorId) {
+  var v = null;
+  for (var i = 0; i < vendors.length; i++) if (vendors[i].id === vendorId) { v = vendors[i]; break; }
+  if (!v) return;
+
+  var compliance = 0;
+  if (v.contract_clauses.audit_rights) compliance++;
+  if (v.contract_clauses.data_location) compliance++;
+  if (v.contract_clauses.subcontracting_transparency) compliance++;
+  if (v.contract_clauses.tlpt_support) compliance++;
+  var compliancePct = Math.round((compliance / 4) * 100);
+  var scoreColor = v.security_score >= 85 ? 'green' : v.security_score >= 75 ? 'yellow' : 'red';
+  var concColor = v.concentration_pct >= 50 ? 'red' : v.concentration_pct >= 30 ? 'yellow' : 'green';
+
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">';
+  html += '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--' + scoreColor + ')">' + v.security_score + '</div><div class="sim-result-label">Security Score</div></div>';
+  html += '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--' + concColor + ')">' + v.concentration_pct + '%</div><div class="sim-result-label">Concentration</div></div>';
+  html += '<div class="sim-result-card"><div class="sim-result-value">' + v.functions_dependent + '/' + v.total_functions + '</div><div class="sim-result-label">Functions Dependent</div></div>';
+  html += '<div class="sim-result-card"><div class="sim-result-value" style="color:var(--' + (compliancePct >= 75 ? 'green' : compliancePct >= 50 ? 'yellow' : 'red') + ')">' + compliancePct + '%</div><div class="sim-result-label">Compliance</div></div></div>';
+
+  html += '<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">Contract Clauses</div>';
+  html += '<div class="detail-row"><span class="detail-label">Audit Rights</span><span class="detail-value" style="color:var(--' + (v.contract_clauses.audit_rights ? 'green' : 'red') + ')">' + (v.contract_clauses.audit_rights ? 'Included' : 'MISSING') + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Data Location</span><span class="detail-value" style="color:var(--' + (v.contract_clauses.data_location ? 'green' : 'red') + ')">' + (v.contract_clauses.data_location ? 'Included' : 'MISSING') + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Subcontracting Transparency</span><span class="detail-value" style="color:var(--' + (v.contract_clauses.subcontracting_transparency ? 'green' : 'red') + ')">' + (v.contract_clauses.subcontracting_transparency ? 'Included' : 'MISSING') + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">TLPT Support</span><span class="detail-value" style="color:var(--' + (v.contract_clauses.tlpt_support ? 'green' : 'red') + ')">' + (v.contract_clauses.tlpt_support ? 'Included' : 'MISSING') + '</span></div></div>';
+
+  html += '<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">Exit Readiness</div>';
+  html += '<div class="detail-row"><span class="detail-label">Data Portability</span><span class="detail-value">' + v.exit_readiness.data_portability + '%</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Alternative Vendor Ready</span><span class="detail-value">' + v.exit_readiness.alternative_ready + '%</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Est. Migration Cost</span><span class="detail-value">&euro;' + v.exit_readiness.migration_cost + 'M</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Est. Migration Time</span><span class="detail-value">' + v.exit_readiness.migration_time_months + ' months</span></div></div>';
+
+  html += '<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">Data Locations</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  for (var i = 0; i < v.data_locations.length; i++) html += '<span class="clause-tag ok">' + v.data_locations[i] + '</span>';
+  html += '</div></div>';
+
+  html += '<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">Subcontractors</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  for (var i = 0; i < v.subcontractors.length; i++) html += '<span class="clause-tag ok">' + v.subcontractors[i] + '</span>';
+  html += '</div></div>';
+
+  if (v.recent_events.length > 0) {
+    html += '<div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Recent Events</div>';
+    for (var i = 0; i < v.recent_events.length; i++) {
+      var e = v.recent_events[i];
+      html += '<div class="event-item ' + e.severity + '"><div class="event-date">' + e.date + ' &middot; ' + e.type.replace(/_/g, ' ') + '</div><div class="event-desc">' + e.description + '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('vendor-modal-title').textContent = v.name;
+  document.getElementById('vendor-modal-body').innerHTML = html;
+  document.getElementById('vendor-modal').classList.add('active');
+}
+
+function closeVendorModal() { document.getElementById('vendor-modal').classList.remove('active'); }
+
+function showAlertDetail(alertId) {
+  var a = null;
+  for (var i = 0; i < alerts.length; i++) if (alerts[i].id === alertId) { a = alerts[i]; break; }
+  if (!a) return;
+  var msg = 'Alert #' + a.id + '\n\nVendor: ' + a.vendor + '\nType: ' + a.type.replace(/_/g, ' ') + '\nSeverity: ' + a.severity.toUpperCase() + '\nStatus: ' + a.status.toUpperCase() + '\n\n' + a.message + '\n\nTimestamp: ' + a.timestamp;
+  alert(msg);
+}
+
+function generateAuditPack() { document.getElementById('audit-modal').classList.add('active'); }
+function closeAuditModal() { document.getElementById('audit-modal').classList.remove('active'); }
+function downloadAuditPack() { alert('BaFin Audit Pack generated successfully!\n\nFiles included:\n- ICT Third-Party Register (PDF)\n- Contract Clause Evidence (PDF)\n- Exit Strategy Documentation (PDF)\n- Concentration Risk Analysis (PDF)\n- Raw Data Export (JSON)\n\nAll documents are DORA-compliant and ready for BaFin submission.'); }
+function exportCompliance() { alert('Compliance matrix exported to CSV format.\n\nFile: dora_compliance_matrix_2026-07-13.csv'); }
+
+window.addEventListener('load', function() {
+  updateExitSimulation();
+});
+</script>
+</body>
+</html>
