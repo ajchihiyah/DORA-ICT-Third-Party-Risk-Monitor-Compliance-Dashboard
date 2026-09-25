@@ -1,3 +1,5 @@
+<img width="1448" height="903" alt="image" src="https://github.com/user-attachments/assets/e3cc3d1c-0463-46cb-b5b7-8e5a499b2d7b" />
+
 # DORA ICT Third-Party Risk Monitor
 
 > A SOC analyst frontend for real-time ICT third-party risk monitoring, concentration tracking, and DORA-compliant exit strategy simulation.
